@@ -2,7 +2,9 @@ package com.hrs.bookings.constants;
 
 public enum ReservationStatus {
     CANCELED(0),
-    ACTIVE(1);
+    RESERVED(1),
+    CHECKEDIN(2),
+    CHECKEDOUT(3);
 
     int type;
     ReservationStatus(int type){

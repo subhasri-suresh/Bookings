@@ -19,9 +19,9 @@ public class ReservedRooms {
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;
 
-    private long hotelId;
-
-    private int roomType;
+    @ManyToOne
+    @JoinColumn(name = "room_id")
+    private Rooms room;
 
     private int roomCount;
 

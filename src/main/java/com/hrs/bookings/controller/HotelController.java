@@ -17,8 +17,8 @@ public class HotelController {
     @Autowired
     HotelService hotelService;
 
-    @GetMapping("/get/availableRooms")
-    public List<Hotels> getAvailableRooms(@RequestParam("zipCode") String zipCode, @RequestParam("city") String city){
-        return hotelService.getAvailableRooms(zipCode, city);
+    @GetMapping
+    public List<Hotels> getAvailableRooms(@RequestParam("city") String city, @RequestParam("checkin_date") String checkin, @RequestParam("checkout_date") String checkout){
+        return hotelService.getHotels(city, checkin, checkout);
     }
 }

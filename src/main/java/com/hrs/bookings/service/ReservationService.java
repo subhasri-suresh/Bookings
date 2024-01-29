@@ -1,13 +1,9 @@
 package com.hrs.bookings.service;
 
-import com.hrs.bookings.RoomUnavailableException;
+import com.hrs.bookings.CustomException.RoomUnavailableException;
 import com.hrs.bookings.constants.ReservationStatus;
-import com.hrs.bookings.dao.AvailableRoomsRepository;
-import com.hrs.bookings.dao.HotelRepository;
-import com.hrs.bookings.dao.ReservationRepository;
-import com.hrs.bookings.dao.ReservedRoomsRepository;
+import com.hrs.bookings.dao.*;
 import com.hrs.bookings.entity.AvailableRooms;
-import com.hrs.bookings.entity.Hotels;
 import com.hrs.bookings.entity.Reservation;
 import com.hrs.bookings.entity.ReservedRooms;
 import com.hrs.bookings.util.DateUtil;
@@ -21,29 +17,44 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Date;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
 public class ReservationService {
 
-    @Autowired
     ReservationRepository reservationRepository;
-
-    @Autowired
     HotelRepository hotelRepository;
-
-    @Autowired
     AvailableRoomsRepository availableRoomsRepository;
+    ReservedRoomsRepository reservedRoomsRepository;
 
     @Autowired
-    ReservedRoomsRepository reservedRoomsRepository;
+    DataBaseQueryRepository queryRepository;
+
+    @Autowired
+    public void setReservationRepository(ReservationRepository reservationRepository){
+        this.reservationRepository = reservationRepository;
+    }
+
+    @Autowired
+    public void setHotelRepository(HotelRepository hotelRepository){
+        this.hotelRepository = hotelRepository;
+    }
+
+    @Autowired
+    public void setAvailableRoomsRepository(AvailableRoomsRepository availableRoomsRepository){
+        this.availableRoomsRepository = availableRoomsRepository;
+    }
+
+    @Autowired
+    public void setReservedRoomsRepository(ReservedRoomsRepository reservedRoomsRepository){
+        this.reservedRoomsRepository = reservedRoomsRepository;
+    }
 
     Logger logger = LoggerFactory.getLogger(ReservationService.class);
 
 
     public void createReservation(Reservation reservationObj) {
-        Hotels hotel = hotelRepository.getReferenceById(reservationObj.getHotel().getId());
-        reservationObj.setHotel(hotel);
         for (ReservedRooms reservedRoom : reservationObj.getReservedRooms()) {
             reservedRoom.setReservation(reservationObj);
 
@@ -51,9 +62,23 @@ public class ReservationService {
         reserveRooms(reservationObj);
     }
 
+    /**
+     * Cancels the reservation and updates the available rooms count
+     *
+     * @param id
+     */
     public void cancelReservation(long id) {
         Reservation reservation = reservationRepository.getReferenceById(id);
         reservation.setReservationStatus(ReservationStatus.getType(ReservationStatus.CANCELED));
+        for (ReservedRooms reservedRoom : reservation.getReservedRooms()) {
+            //revert the count of the available rooms
+            List<AvailableRooms> availableRooms = availableRoomsRepository.findByHotelIdAndAvailableDateBetween( reservation.getHotel().getId(),
+                    reservation.getReservationStartDate(), reservation.getReservationEndDate());
+            for (AvailableRooms availableRoom : availableRooms) {
+                availableRoom.setCount(availableRoom.getCount() + 1);
+                availableRoomsRepository.save(availableRoom);
+            }
+        }
         reservationRepository.save(reservation);
     }
 
@@ -72,15 +97,14 @@ public class ReservationService {
 
             Date startDate = reservationObj.getReservationStartDate();
             Date endDate =  reservationObj.getReservationEndDate();
+            Date previousDate = Date.valueOf(DateUtil.getPreviousDateInString(endDate.toString()));
             long totalDays = DateUtil.countDays(startDate.toString(), endDate.toString());
 
             for (ReservedRooms reservedRoom : reservedRoomsList) {
-                //LocalDate date = LocalDate.parse(endDate.toString());
-                // Date finalEndDate = date.min
-                List<AvailableRooms> availableRooms = availableRoomsRepository.findByroomTypeAndHotelIdAndAvailableDateBetweenAndCountGreaterThan(reservedRoom.getRoomType(), reservedRoom.getHotelId(),
-                        startDate, endDate, 0);
+                List<AvailableRooms> availableRooms = availableRoomsRepository.findByHotelIdAndRoomIdAndAvailableDateBetweenAndCountGreaterThan( reservationObj.getHotel().getId(),
+                        reservedRoom.getRoom().getId(), startDate, previousDate, reservedRoom.getRoomCount());
 
-                if(totalDays != availableRooms.size()-1){
+                if(totalDays != availableRooms.size()){
                     throw new RoomUnavailableException("Booking not available. All the rooms are booked");
                 }
 
@@ -91,9 +115,26 @@ public class ReservationService {
             }
         } catch (ParseException ex){
             logger.error("Invalid date",ex.getMessage());
-        } catch (Exception ex){
-            logger.error("Exception"+ex.getMessage());
-            ex.printStackTrace();
         }
+    }
+
+    /**
+     * To update reservation rooms type
+     *
+     * @param id
+     */
+    public void updateReservation(long id, Map updateObj) throws Exception {
+        Reservation reservation = reservationRepository.findById(id);
+        if(reservation == null) {
+            throw new RuntimeException("Reservation not found");
+        }
+        long oldRoomId = Long.valueOf(updateObj.get("old_room_id").toString());
+        long newRoomId = Long.valueOf(updateObj.get("new_room_id").toString());
+        ReservedRooms oldRoomData = reservedRoomsRepository.findByReservation_IdAndRoom_IdEquals(id, oldRoomId);
+        if(oldRoomData == null) {
+            throw new RuntimeException("Reservation room not found");
+        }
+        int noOfRooms = oldRoomData.getRoomCount();
+        queryRepository.updateReservedRoom(oldRoomData.getId(), oldRoomId, newRoomId, noOfRooms);
     }
 }

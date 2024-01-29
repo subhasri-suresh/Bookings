@@ -18,5 +18,9 @@ public interface AvailableRoomsRepository extends JpaRepository<AvailableRooms, 
     @Transactional
     public void updateCount(long id);
 
-    public List<AvailableRooms> findByroomTypeAndHotelIdAndAvailableDateBetweenAndCountGreaterThan(int roomType, long hotelId, Date startDate, Date endDate, int minCount);
+    public List<AvailableRooms> findByHotelIdAndRoomIdAndAvailableDateBetweenAndCountGreaterThan(long hotelId, long roomId, Date startDate, Date endDate, int minCount);
+
+    public List<AvailableRooms> findByHotelIdAndAvailableDateBetween(long hotelId, Date startDate, Date endDate);
+
+
 }

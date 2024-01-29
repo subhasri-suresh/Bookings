@@ -7,5 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReservedRoomsRepository extends JpaRepository<ReservedRooms, Long> {
 
+    public ReservedRooms findByReservation_IdAndRoom_IdEquals(long reservationId, long roomId);
 
 }

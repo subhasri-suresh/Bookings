@@ -1,5 +1,6 @@
 package com.hrs.bookings.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +27,11 @@ public class Hotels {
 
     private String city;
 
+    private String country;
+
     private String zipcode;
 
     @OneToMany(mappedBy = "hotel")
+    @JsonIgnore
     private List<Reservation> reservation;
 }

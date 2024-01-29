@@ -15,8 +15,12 @@ public class Rooms {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "hotel_id")
-    private int hotelId;
+    @ManyToOne
+    @JoinColumn(name = "hotel_id")
+    private Hotels hotel;
+
+    @Column(name = "room_name")
+    private String roomName;
 
     @Column(name = "room_type")
     private int roomType;

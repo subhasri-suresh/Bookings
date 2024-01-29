@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/reservation")
 public class ReservationController {
@@ -20,6 +22,7 @@ public class ReservationController {
             reservationService.createReservation(reservationObj);
             return ResponseEntity.ok().build();
         } catch (Exception ex){
+            ex.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         }
     }
@@ -29,9 +32,15 @@ public class ReservationController {
         reservationService.cancelReservation(id);
     }
 
-    @PutMapping
-    public void updateReservation(){
-
+    @PutMapping("/update/{id}")
+    public ResponseEntity updateReservation(@PathVariable long id, @RequestBody Map requestObj){
+        try{
+            reservationService.updateReservation(id, requestObj);
+            return ResponseEntity.ok().build();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 
 
