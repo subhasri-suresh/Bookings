@@ -7,6 +7,6 @@ http://localhost:8080/h2-console
 DB and passwored configured in application.properties
 
 # Techstack
-Spring boot
-Hibernate
-h2 (Inmemory)
+   * Spring boot
+   * Hibernate
+   * h2 (Inmemory)
