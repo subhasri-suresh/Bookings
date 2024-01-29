@@ -9,4 +9,5 @@ DB and passwored configured in application.properties
 # Techstack
    * Spring boot
    * Hibernate
-   * h2 (Inmemory)
+   * h2 (Inmemory DB)
+   * Mavan build tool
